@@ -11,9 +11,9 @@ var response200Counter = 0
 var response500Counter = 0
 
 type Metrics struct {
-	totalHttpRequests   int		`json:"total_http_requests,omitempty"`
-	httpResponse200		int		`json:"http_response_200,omitempty"`
-	httpResponse500 	int		`json:"http_response_500,omitempty"`
+	TotalHttpRequests int `json:"total_http_requests,omitempty"`
+	HttpResponse200   int `json:"http_response_200,omitempty"`
+	HttpResponse500   int `json:"http_response_500,omitempty"`
 }
 
 func hiHandler(w http.ResponseWriter,r *http.Request) {
@@ -31,18 +31,15 @@ func hiHandler(w http.ResponseWriter,r *http.Request) {
 
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type","application/json")
-	w.WriteHeader(http.StatusOK)
-	metrics := Metrics{totalHttpRequests: requestCounter, httpResponse200: response200Counter, httpResponse500: response500Counter}
-	json.NewEncoder(w).Encode(metrics)
+	metrics := &Metrics{TotalHttpRequests: requestCounter, HttpResponse200: response200Counter, HttpResponse500: response500Counter}
 
-	/*b,e := json.Marshal(metrics)
+	b,e := json.Marshal(metrics)
 	if e != nil {
 		fmt.Fprintf(w,"%s",e)
 	}
 	w.Header().Set("Content-Type","application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(b)*/
+	w.Write(b)
 }
 
 func main() {
