@@ -1,50 +1,58 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"math/rand"
 	"net/http"
+	"time"
 )
-
-var requestCounter = 0
-var response200Counter = 0
-var response500Counter = 0
-
-type Metrics struct {
-	TotalHttpRequests int `json:"total_http_requests,omitempty"`
-	HttpResponse200   int `json:"http_response_200,omitempty"`
-	HttpResponse500   int `json:"http_response_500,omitempty"`
-}
 
 func hiHandler(w http.ResponseWriter,r *http.Request) {
 
-	requestCounter +=1
-	if requestCounter%5 == 0 {
-		response500Counter+=1
+	httpRequestReceived.Inc()
+
+	if getRandomNumber() % 7 == 0 {
+		httpResponse500.Inc()
 		fmt.Fprintf(w,"Something went wrong.")
 	} else {
-		response200Counter+=1
+		httpResponse200.Inc()
 		fmt.Fprintf(w, "hello")
 	}
-
 }
 
-func metricsHandler(w http.ResponseWriter, r *http.Request) {
-
-	metrics := &Metrics{TotalHttpRequests: requestCounter, HttpResponse200: response200Counter, HttpResponse500: response500Counter}
-
-	b,e := json.Marshal(metrics)
-	if e != nil {
-		fmt.Fprintf(w,"%s",e)
-	}
-	w.Header().Set("Content-Type","application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(b)
+func getRandomNumber() int{
+	source := rand.NewSource(time.Now().UnixNano())
+	randomNumber := rand.New(source)
+	return randomNumber.Intn(1000)
 }
+
+var (
+	httpRequestReceived = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "my_http_server_requests_total",
+		Help: "Total number of Http Requests received",
+	})
+)
+
+var (
+	httpResponse500 = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "my_http_server_response_500_total",
+		Help: "Total number of 500 Http Responses",
+	})
+)
+
+var (
+	httpResponse200 = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "my_http_server_response_200_total",
+		Help: "Total number of 200 Http Responses",
+	})
+)
 
 func main() {
 	http.HandleFunc("/hi",hiHandler)
-	http.HandleFunc("/metrics", metricsHandler)
+	http.Handle("/metrics",promhttp.Handler())
 	http.ListenAndServe(":8080",nil)
 
 }
