@@ -11,16 +11,21 @@ import (
 )
 
 func hiHandler(w http.ResponseWriter,r *http.Request) {
+	timer := prometheus.NewTimer(latencyHistogram)
 
 	httpRequestReceived.Inc()
 
+	time.Sleep(time.Duration(getRandomNumber())*time.Millisecond)
+
 	if getRandomNumber() % 7 == 0 {
 		httpResponse500.Inc()
+		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w,"Something went wrong.")
 	} else {
 		httpResponse200.Inc()
 		fmt.Fprintf(w, "hello")
 	}
+	timer.ObserveDuration()
 }
 
 func getRandomNumber() int{
@@ -47,6 +52,14 @@ var (
 	httpResponse200 = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "my_http_server_response_200_total",
 		Help: "Total number of 200 Http Responses",
+	})
+)
+
+var (
+	latencyHistogram = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name:    "my_http_server_latency",
+		Help:    "Latency for my_http_server",
+		Buckets: prometheus.LinearBuckets(0.1,0.2,5),
 	})
 )
 
