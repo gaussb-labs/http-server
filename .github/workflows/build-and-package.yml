@@ -8,14 +8,14 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: ghrc.io
+  REGISTRY: ghcr.io
   IMAGE_NAME: ${{github.repository}}
 
 jobs:
   build-and-publish-image:
     runs-on: ubuntu-latest
     permissions:
-      content: read
+      contents: read
       packages: write
     steps:
       - name: Checkout
